@@ -1,0 +1,12 @@
+{
+  "name": "CV Tech Planning",
+  "short_name": "CV Tech",
+  "description": "Gestione planning e interventi tecnici",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#123456",
+  "lang": "it"
+}
