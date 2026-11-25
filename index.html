@@ -1008,7 +1008,7 @@ window.CIVITECH_MODE = 'locale';
     return '<section class="sum" aria-label="Totali della giornata"><div class="sum-grid">' +
       '<div><div class="k">Contanti</div><div class="v cash num" id="t-cash">' + eur(t.cash) + '</div></div>' +
       '<div><div class="k">POS</div><div class="v pos num" id="t-pos">' + eur(t.pos) + '</div></div>' +
-      '<div><div class="k">Totale</div><div class="v num" id="t-all">' + eur(t.cash + t.pos) + '</div></div></div>' +
+      '<div><div class="k">Totale</div><div class="v num" id="t-all">' + eur(t.cash + t.pos + t.bol) + '</div></div></div>' +
       '<div class="bol-sum"><span class="k">Totale bollini</span><span class="v num" id="t-bol">' + eur(t.bol) + '</span></div>' +
       '<div class="meta" id="t-meta">' + metaTxt(t) + '</div></section>';
   }
@@ -1016,7 +1016,7 @@ window.CIVITECH_MODE = 'locale';
   function updTotals() {
     var p = current(); if (!p) return; var t = totals(p);
     var s = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-    s('t-cash', eur(t.cash)); s('t-pos', eur(t.pos)); s('t-all', eur(t.cash + t.pos)); s('t-bol', eur(t.bol)); s('t-meta', metaTxt(t));
+    s('t-cash', eur(t.cash)); s('t-pos', eur(t.pos)); s('t-all', eur(t.cash + t.pos + t.bol)); s('t-bol', eur(t.bol)); s('t-meta', metaTxt(t));
   }
   function alertsHTML(p) {
     if (!p.avvisi || !p.avvisi.length) return '';
@@ -1098,7 +1098,7 @@ window.CIVITECH_MODE = 'locale';
   }
   function hdrHTML() {
     var p = current(), n = archived().length;
-    var h = '<div class="brand"><button type="button" class="burger" data-act="menu" aria-label="Menu" aria-expanded="' + !!S.menu + '">&#9776;</button><h1>Civitech <span>Planning</span></h1><div class="when"><span class="ver">v29</span> <span class="dt">' + (S.view === 'oggi' && p ? esc(fmtShort(p.date)) : '') + '</span><button type="button" id="sync" class="sync ' + syncCls() + '" data-act="syncnow">' + esc(syncTxt()) + '</button></div></div>';
+    var h = '<div class="brand"><button type="button" class="burger" data-act="menu" aria-label="Menu" aria-expanded="' + !!S.menu + '">&#9776;</button><h1>Civitech <span>Planning</span></h1><div class="when"><span class="ver">v30</span> <span class="dt">' + (S.view === 'oggi' && p ? esc(fmtShort(p.date)) : '') + '</span><button type="button" id="sync" class="sync ' + syncCls() + '" data-act="syncnow">' + esc(syncTxt()) + '</button></div></div>';
     if (S.menu) h += menuHTML();
     if (S.view === 'detail') h += '<button type="button" class="back" data-act="tab" data-v="archivio">← Archivio</button>';
     /* Oggi / Archivio: nel menu */
@@ -1322,7 +1322,7 @@ window.CIVITECH_MODE = 'locale';
       if (ty2 > 775) { doc.addPage(); ty2 = Y0 + 10; }
       txt('Totale contanti: ' + money(t.cash), X, ty2 + 8, 11, true);
       txt('Totale POS/Bancomat: ' + money(t.pos), X, ty2 + 22, 11, true);
-      txt('Totale incassato: ' + money(t.cash + t.pos), X, ty2 + 36, 11, true);
+      txt('Totale incassato + bollini: ' + money(t.cash + t.pos + t.bol), X, ty2 + 36, 11, true);
       txt('Totale bollini: ' + money(t.bol), X, ty2 + 50, 11, true);
       if (over.length) {
         doc.addPage(); var oy = 50; doc.setTextColor(0);
