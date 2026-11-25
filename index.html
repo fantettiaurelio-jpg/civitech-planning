@@ -321,6 +321,11 @@ details > summary .ico { color: var(--accent); }
 
 .line-tel a.tl { color: inherit; text-decoration: underline; padding: 8px 2px; display: inline-block; }
 
+.amt.bol { margin-top: 8px; }
+.bol-sum { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e3e6e9; }
+.bol-sum .k { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.bol-sum .v { font-weight: 800; font-size: 18px; }
+
 </style>
 </head>
 <body>
@@ -519,15 +524,16 @@ window.CIVITECH_MODE = 'locale';
     return Object.keys(S.plannings).map(function (k) { return S.plannings[k]; }).filter(function (p) { return p.status === 'archived'; })
       .sort(function (a, b) { return (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0); });
   };
-  var blank = function () { return { id: rid(), orario: '', nome: '', telefono: '', via: '', civico: '', comune: '', lavorazione: '', caldaia: '', importo: null, dettagli: '', notaOrig: '', azienda: '', tecnico: '', note: '', pag: '', pagImporto: null, annullata: false, manuale: false, avviso: false }; };
+  var blank = function () { return { id: rid(), orario: '', nome: '', telefono: '', via: '', civico: '', comune: '', lavorazione: '', caldaia: '', importo: null, dettagli: '', notaOrig: '', azienda: '', tecnico: '', note: '', pag: '', pagImporto: null, bollino: null, annullata: false, manuale: false, avviso: false }; };
   var findS = function (sid) { var p = current(); return p ? p.schede.filter(function (s) { return s.id === sid; })[0] : null; };
   var totals = function (p) {
-    var t = { cash: 0, pos: 0, n: 0, voids: 0, done: 0 };
+    var t = { cash: 0, pos: 0, bol: 0, n: 0, voids: 0, done: 0 };
     p.schede.forEach(function (s) {
       if (s.annullata) { t.voids++; return; }
       t.n++; if (s.fatta) t.done++;
       var v = s.pagImporto || 0;
       if (s.pag === 'contanti') t.cash += v; else if (s.pag === 'pos') t.pos += v;
+      t.bol += s.bollino || 0;
     });
     return t;
   };
@@ -961,7 +967,7 @@ window.CIVITECH_MODE = 'locale';
     if (!ro) h += alarmDetails(s);
     h += '</div>';
     if (ro) {
-      h += '<div class="pay"><div class="ro-pay">' + (s.annullata ? 'Annullata da ufficio' : s.pag ? 'Pagato con <b>' + (s.pag === 'pos' ? 'POS/Bancomat' : 'contanti') + '</b> · <b class="num">' + eur(s.pagImporto) + '</b>' : 'Nessun pagamento registrato') + '</div></div>';
+      h += '<div class="pay"><div class="ro-pay">' + (s.annullata ? 'Annullata da ufficio' : s.pag ? 'Pagato con <b>' + (s.pag === 'pos' ? 'POS/Bancomat' : 'contanti') + '</b> · <b class="num">' + eur(s.pagImporto) + '</b>' : 'Nessun pagamento registrato') + (!s.annullata && s.bollino ? ' · Bollino <b class="num">' + eur(s.bollino) + '</b>' : '') + '</div></div>';
       if (open) {
         var rows = [['Orario', s.orario], ['Lavorazione', s.lavorazione], ['Apparecchio', s.caldaia], ['Importo', s.importo != null ? eur(s.importo) : ''], ['Descrizione', s.dettagli], ['Nota planning', s.notaOrig], ['Note', s.note]];
         h += '<dl class="dl">' + rows.filter(function (r) { return r[1]; }).map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('') + '</dl>';
@@ -974,6 +980,7 @@ window.CIVITECH_MODE = 'locale';
         '<button type="button" data-act="pay" data-sid="' + s.id + '" data-v="contanti" class="cash' + (s.pag === 'contanti' ? ' on' : '') + '">Contanti</button>' +
         '<button type="button" data-act="pay" data-sid="' + s.id + '" data-v="pos" class="pos' + (s.pag === 'pos' ? ' on' : '') + '">POS</button></div>';
       if (s.pag) h += '<div class="amt"><label for="pi-' + s.id + '">Incassato €</label><input id="pi-' + s.id + '" type="text" inputmode="decimal" autocomplete="off" data-f="pagImporto" data-sid="' + s.id + '" value="' + esc(inVal(s.pagImporto)) + '"></div>';
+      if (!s.annullata) h += '<div class="amt bol"><label for="bo-' + s.id + '">Bollino €</label><input id="bo-' + s.id + '" type="text" inputmode="decimal" autocomplete="off" data-f="bollino" data-sid="' + s.id + '" value="' + esc(inVal(s.bollino)) + '"></div>';
       h += '</div>';
       if (open) h += formHTML(s);
       h += '<div class="savebar"><button type="button" class="btn primary" data-act="save" data-sid="' + s.id + '">Salva</button>' + (s.fatta ? '<button type="button" class="btn" data-act="undo" data-sid="' + s.id + '">Riporta da fare</button>' : '') + '</div>';
@@ -1002,13 +1009,14 @@ window.CIVITECH_MODE = 'locale';
       '<div><div class="k">Contanti</div><div class="v cash num" id="t-cash">' + eur(t.cash) + '</div></div>' +
       '<div><div class="k">POS</div><div class="v pos num" id="t-pos">' + eur(t.pos) + '</div></div>' +
       '<div><div class="k">Totale</div><div class="v num" id="t-all">' + eur(t.cash + t.pos) + '</div></div></div>' +
+      '<div class="bol-sum"><span class="k">Totale bollini</span><span class="v num" id="t-bol">' + eur(t.bol) + '</span></div>' +
       '<div class="meta" id="t-meta">' + metaTxt(t) + '</div></section>';
   }
   var metaTxt = function (t) { return t.n + (t.n === 1 ? ' scheda' : ' schede') + ' · ' + t.done + ' fatte, ' + (t.n - t.done) + ' da fare' + (t.voids ? ' · ' + t.voids + (t.voids === 1 ? ' annullata (non conteggiata)' : ' annullate (non conteggiate)') : ''); };
   function updTotals() {
     var p = current(); if (!p) return; var t = totals(p);
     var s = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-    s('t-cash', eur(t.cash)); s('t-pos', eur(t.pos)); s('t-all', eur(t.cash + t.pos)); s('t-meta', metaTxt(t));
+    s('t-cash', eur(t.cash)); s('t-pos', eur(t.pos)); s('t-all', eur(t.cash + t.pos)); s('t-bol', eur(t.bol)); s('t-meta', metaTxt(t));
   }
   function alertsHTML(p) {
     if (!p.avvisi || !p.avvisi.length) return '';
@@ -1045,7 +1053,7 @@ window.CIVITECH_MODE = 'locale';
   }
   function rowTxt(p) {
     var t = totals(p);
-    return p.schede.length + ' schede · <span class="c num">Contanti ' + eur(t.cash) + '</span> · <span class="p num">POS ' + eur(t.pos) + '</span>';
+    return p.schede.length + ' schede · <span class="c num">Contanti ' + eur(t.cash) + '</span> · <span class="p num">POS ' + eur(t.pos) + '</span>' + (t.bol ? ' · <span class="num">Bollini ' + eur(t.bol) + '</span>' : '');
   }
   function resultsHTML() {
     var q = norm(S.query), h = '';
@@ -1090,7 +1098,7 @@ window.CIVITECH_MODE = 'locale';
   }
   function hdrHTML() {
     var p = current(), n = archived().length;
-    var h = '<div class="brand"><button type="button" class="burger" data-act="menu" aria-label="Menu" aria-expanded="' + !!S.menu + '">&#9776;</button><h1>Civitech <span>Planning</span></h1><div class="when"><span class="ver">v27</span> <span class="dt">' + (S.view === 'oggi' && p ? esc(fmtShort(p.date)) : '') + '</span><button type="button" id="sync" class="sync ' + syncCls() + '" data-act="syncnow">' + esc(syncTxt()) + '</button></div></div>';
+    var h = '<div class="brand"><button type="button" class="burger" data-act="menu" aria-label="Menu" aria-expanded="' + !!S.menu + '">&#9776;</button><h1>Civitech <span>Planning</span></h1><div class="when"><span class="ver">v29</span> <span class="dt">' + (S.view === 'oggi' && p ? esc(fmtShort(p.date)) : '') + '</span><button type="button" id="sync" class="sync ' + syncCls() + '" data-act="syncnow">' + esc(syncTxt()) + '</button></div></div>';
     if (S.menu) h += menuHTML();
     if (S.view === 'detail') h += '<button type="button" class="back" data-act="tab" data-v="archivio">← Archivio</button>';
     /* Oggi / Archivio: nel menu */
@@ -1218,9 +1226,9 @@ window.CIVITECH_MODE = 'locale';
     if (t.id === 'pdate') { var p0 = current(); if (p0 && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) { p0.date = t.value; touch(p0); var w = $('.when .dt'); if (w) w.textContent = fmtShort(p0.date); } return; }
     var f = t.dataset && t.dataset.f; if (!f) return;
     var p = current(), s = findS(t.dataset.sid); if (!s || !p) return;
-    s[f] = (f === 'importo' || f === 'pagImporto') ? num(t.value) : t.value;
+    s[f] = (f === 'importo' || f === 'pagImporto' || f === 'bollino') ? num(t.value) : t.value;
     touch(p);
-    if (f === 'pagImporto') updTotals();
+    if (f === 'pagImporto' || f === 'bollino') updTotals();
     if (['nome', 'telefono', 'via', 'civico', 'comune'].indexOf(f) >= 0) { rubricaPut(s); patchCard(s.id); }
     else if (['orario', 'lavorazione', 'caldaia', 'dettagli'].indexOf(f) >= 0) patchCard(s.id);
   });
@@ -1299,15 +1307,23 @@ window.CIVITECH_MODE = 'locale';
           nl.forEach(function (ln) { doc.text(ln, rx, ty + 4); ty += nlh; });
         }
         if (!s.annullata && s.pag) txt('PAGATO ' + (s.pag === 'pos' ? 'CON POS' : 'IN CONTANTI') + ': ' + money(s.pagImporto), rx, y + BH - 9, 11, true);
+        if (!s.annullata && s.bollino) {
+          var btx = 'BOLLINO: ' + money(s.bollino), bfs = 11;
+          doc.setFont('times', 'bold'); doc.setFontSize(11);
+          var pw = s.pag ? doc.getTextWidth('PAGATO ' + (s.pag === 'pos' ? 'CON POS' : 'IN CONTANTI') + ': ' + money(s.pagImporto)) : 0;
+          while (bfs > 7 && (rx + pw + 10 + doc.getTextWidth(btx) > X + BW - 4)) { bfs -= 0.5; doc.setFontSize(bfs); }
+          txt(btx, X + BW - 6, y + BH - 9, bfs, true, { align: 'right' });
+        }
         if (s.annullata) {
           doc.setTextColor(212, 42, 28); txt('ANNULLATA DA UFFICIO', X + BW / 2 - 70, y + BH / 2 + 30, 26, true, { angle: 10 }); doc.setTextColor(0);
         }
       });
       var t = totals(p), last = (p.schede.length - 1) % PER, ty2 = Y0 + (last + 1) * PITCH + 4;
-      if (ty2 > 790) { doc.addPage(); ty2 = Y0 + 10; }
+      if (ty2 > 775) { doc.addPage(); ty2 = Y0 + 10; }
       txt('Totale contanti: ' + money(t.cash), X, ty2 + 8, 11, true);
       txt('Totale POS/Bancomat: ' + money(t.pos), X, ty2 + 22, 11, true);
       txt('Totale incassato: ' + money(t.cash + t.pos), X, ty2 + 36, 11, true);
+      txt('Totale bollini: ' + money(t.bol), X, ty2 + 50, 11, true);
       if (over.length) {
         doc.addPage(); var oy = 50; doc.setTextColor(0);
         txt('NOTE COMPLETE', 30, oy, 14, true); oy += 26;
