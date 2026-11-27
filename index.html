@@ -238,6 +238,25 @@ textarea { min-height: 76px; resize: vertical; }
 .pvm .n i { font-style: normal; color: var(--muted); }
 .pvm input { min-height: 40px; padding: 6px 8px; font-size: 15px; min-width: 0; }
 
+.pv-shots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pv-shots:empty { display: none; }
+.pv-shots .chip { min-height: 38px; padding: 0 14px; border-radius: 19px; border: 1px solid var(--line); background: var(--raised); font-weight: 600; font-size: 14px; }
+.pv-shots .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pv-shots .chip.del { margin-left: auto; color: var(--danger); border-color: var(--danger); background: transparent; }
+.pv-shots .foot { flex-basis: 100%; text-align: left; }
+.pv-size { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px 48px; gap: 8px; align-items: center; }
+.pv-size button { min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--raised); font-size: 22px; font-weight: 700; line-height: 1; }
+.pv-size output { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 14px; }
+.sum .tot .cap { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.pv-camwrap { position: fixed; inset: 0; z-index: 30; background: #000; display: flex; flex-direction: column; }
+#pv-cam-live { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#pv-video { flex: 1; min-height: 0; width: 100%; object-fit: contain; background: #000; }
+.pv-camact { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: #000; }
+.pv-camerr { margin: auto; padding: 24px; color: #fff; display: flex; flex-direction: column; gap: 14px; max-width: 420px; }
+.pv-camerr p { margin: 0; font-size: 15px; line-height: 1.4; }
+.pv-camerr .btn:not(.primary), .pv-camact .btn:not(.primary) { color: #14191e; }
+
 /* fab + toast */
 .fab {
   position: fixed; z-index: 6; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
@@ -877,7 +896,7 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
       '<div><div class="k">Contanti</div><div class="v cash num" id="t-cash">' + eur(t.cash) + '</div></div>' +
       '<div><div class="k">POS</div><div class="v pos num" id="t-pos">' + eur(t.pos) + '</div></div>' +
       '<div><div class="k">Bollini</div><div class="v bol num" id="t-bol">' + eur(t.bol) + '</div></div></div>' +
-      '<div class="tot"><div class="k">Totale</div><div class="v num" id="t-all">' + eur(t.cash + t.pos + t.bol) + '</div></div>' +
+      '<div class="tot"><div class="k">Totale</div><div class="v num" id="t-all">' + eur(t.cash + t.bol) + '</div><div class="cap">contanti + bollini</div></div>' +
       '<div class="meta" id="t-meta">' + metaHTML(t) + '</div></section>';
   }
   var metaHTML = function (t) { return t.n + (t.n === 1 ? ' scheda' : ' schede') + ' · <span class="c-done">' + t.done + ' fatte</span>, <span class="c-todo">' + (t.n - t.done) + ' da fare</span>' + (t.voids ? ' · ' + t.voids + (t.voids === 1 ? ' annullata (non conteggiata)' : ' annullate (non conteggiate)') : ''); };
@@ -885,7 +904,7 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
   function updTotals() {
     var p = current(); if (!p) return; var t = totals(p);
     var s = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-    s('t-cash', eur(t.cash)); s('t-pos', eur(t.pos)); s('t-bol', eur(t.bol)); s('t-all', eur(t.cash + t.pos + t.bol)); var mm = document.getElementById('t-meta'); if (mm) mm.innerHTML = metaHTML(t);
+    s('t-cash', eur(t.cash)); s('t-pos', eur(t.pos)); s('t-bol', eur(t.bol)); s('t-all', eur(t.cash + t.bol)); var mm = document.getElementById('t-meta'); if (mm) mm.innerHTML = metaHTML(t);
   }
   function alertsHTML(p) {
     if (!p.avvisi || !p.avvisi.length) return '';
@@ -968,7 +987,7 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
   }
   function hdrHTML() {
     var p = current(), n = archived().length;
-    var h = '<div class="brand"><button type="button" class="burger" data-act="menu" aria-label="Menu" aria-expanded="' + !!S.menu + '">&#9776;</button><h1>Civitech <span>Planning</span></h1><div class="when"><span class="ver">v30</span> <span class="dt">' + (S.view === 'oggi' && p ? esc(fmtShort(p.date)) : '') + '</span><button type="button" id="sync" class="sync ' + syncCls() + '" data-act="syncnow">' + esc(syncTxt()) + '</button></div></div>';
+    var h = '<div class="brand"><button type="button" class="burger" data-act="menu" aria-label="Menu" aria-expanded="' + !!S.menu + '">&#9776;</button><h1>Civitech <span>Planning</span></h1><div class="when"><span class="ver">v33</span> <span class="dt">' + (S.view === 'oggi' && p ? esc(fmtShort(p.date)) : '') + '</span><button type="button" id="sync" class="sync ' + syncCls() + '" data-act="syncnow">' + esc(syncTxt()) + '</button></div></div>';
     if (S.menu) h += menuHTML();
     if (S.view === 'detail') h += '<button type="button" class="back" data-act="tab" data-v="archivio">← Archivio</button>';
     /* Oggi / Archivio: nel menu */
@@ -1005,19 +1024,63 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
 
   /* ---------- Preventivi: foto del muro, disegni, percorsi, elenco materiali ---------- */
   var PVKEY = 'civitech_prev_v1';
-  var PV = { ready: false, note: '', tool: 'move', sel: -1, items: [], paths: [], cur: null, meas: null, scale: null, cliente: '', photo: null, bg: null, W: 1200, H: 800, mats: {}, extras: [], undo: [], drag: null, imgs: {}, imEls: {}, confNew: false };
-  var PCOL = { tubi: '#c8641a', corr: '#d42a1c', scar: '#1d6fc4', fumi: '#5d6874' };
-  var PNAME = { tubi: 'Tubi rame', corr: 'Corrente', scar: 'Scarico condensa', fumi: 'Tubo fumi' };
-  var pvDash = function (t, u) { return t === 'corr' ? [16 * u, 10 * u] : t === 'scar' ? [4 * u, 11 * u] : t === 'fumi' ? [20 * u, 7 * u, 3 * u, 7 * u] : []; };
+  var PV = { ready: false, note: '', tool: 'move', sel: -1, items: [], paths: [], cur: null, meas: null, scale: null, cliente: '', photo: null, bg: null, W: 1200, H: 800, mats: {}, extras: [], undo: [], drag: null, imgs: {}, imEls: {}, confNew: false, confShot: false, shots: [], ai: 0, thick: { tubi: 1, corr: 1, scar: 1, fumi: 1 }, ptrs: {}, pinch: null, warnedFull: false };
+  var PCOL = { tubi: '#8c97a2', corr: '#d42a1c', scar: '#1d6fc4', fumi: '#7f8a96' };
+  var PNAME = { tubi: 'Canalina / tubi', corr: 'Corrente', scar: 'Scarico condensa', fumi: 'Tubo fumi' };
+  var PSHORT = { tubi: 'canalina', corr: 'corrente', scar: 'scarico condensa', fumi: 'tubo fumi' };
+  var pvDash = function (t, u) { return t === 'corr' ? [16 * u, 10 * u] : t === 'scar' ? [4 * u, 11 * u] : []; };
   var pvFmt = function (n) { return String(Math.round(n * 100) / 100).replace('.', ','); };
   var pvT = null;
   function pvSave() {
     clearTimeout(pvT);
     pvT = setTimeout(function () {
       try {
-        localStorage.setItem(PVKEY, JSON.stringify({ cliente: PV.cliente, photo: PV.photo, items: PV.items, paths: PV.paths, meas: PV.meas, scale: PV.scale, mats: PV.mats, extras: PV.extras, imgs: PV.imgs, note: PV.note }));
-      } catch (e) { /* spazio pieno o non disponibile: la bozza resta solo a schermo */ }
+        pvStash();
+        localStorage.setItem(PVKEY, JSON.stringify({ cliente: PV.cliente, shots: PV.shots.map(function (s) { return { photo: s.photo, items: s.items, paths: s.paths, meas: s.meas, scale: s.scale }; }), ai: PV.ai, mats: PV.mats, extras: PV.extras, imgs: PV.imgs, note: PV.note, thick: PV.thick }));
+        PV.warnedFull = false;
+      } catch (e) { if (!PV.warnedFull) { PV.warnedFull = true; note('Memoria del telefono piena: questo preventivo non resta salvato. Salva subito l’immagine.', true); } }
     }, 400);
+  }
+  function pvNewShot() { return { photo: null, bg: null, W: 1200, H: 800, items: [], paths: [], meas: null, scale: null }; }
+  function pvStash() {
+    if (!PV.shots.length) PV.shots.push(pvNewShot());
+    if (!PV.shots[PV.ai]) PV.ai = 0;
+    var sh = PV.shots[PV.ai];
+    sh.photo = PV.photo; sh.bg = PV.bg; sh.W = PV.W; sh.H = PV.H; sh.items = PV.items; sh.paths = PV.paths; sh.meas = PV.meas; sh.scale = PV.scale;
+  }
+  function pvLoad(sh) { PV.photo = sh.photo; PV.bg = sh.bg; PV.W = sh.W; PV.H = sh.H; PV.items = sh.items; PV.paths = sh.paths; PV.meas = sh.meas; PV.scale = sh.scale; }
+  function pvLoadBg(sh, cb) {
+    if (!sh.photo) { if (cb) cb(null); return; }
+    pvImg(sh.photo, function (im) {
+      if (im) { sh.bg = im; sh.W = im.width; sh.H = im.height; if (PV.shots[PV.ai] === sh) { PV.bg = im; PV.W = im.width; PV.H = im.height; pvFit(); pvDraw(); } }
+      if (cb) cb(im);
+    });
+  }
+  function pvShotsUI() {
+    var box = $('#pv-shots'); if (!box) return;
+    var h = '';
+    PV.shots.forEach(function (sh, i) { h += '<button type="button" class="chip' + (i === PV.ai ? ' on' : '') + '" data-pv="shot" data-i="' + i + '">Foto ' + (i + 1) + (sh.photo ? '' : ' (vuota)') + '</button>'; });
+    if (PV.photo || PV.shots.length > 1) h += '<button type="button" class="chip del" data-pv="delshot">' + (PV.confShot ? 'Conferma elimina' : 'Elimina foto') + '</button>';
+    if (PV.shots.length === 1 && PV.photo) h += '<span class="foot">Per un’altra parete premi di nuovo «Scatta foto» o «Galleria»: la foto si aggiunge alle altre.</span>';
+    box.innerHTML = h;
+  }
+  function pvActivate(i) {
+    if (i === PV.ai || !PV.shots[i]) return;
+    pvFinish(); pvStash();
+    PV.ai = i; pvLoad(PV.shots[i]); PV.sel = -1; PV.cur = null; PV.undo = []; PV.drag = null; PV.pinch = null;
+    pvFit(); pvDraw(); pvShotsUI(); pvSelUI(); pvMeasUI(); pvHint(); pvMats(); pvSave();
+  }
+  function pvSetPhoto(data) {
+    pvFinish(); pvStash();
+    var sh = PV.shots[PV.ai];
+    if (sh.photo) { sh = pvNewShot(); PV.shots.push(sh); PV.ai = PV.shots.length - 1; PV.sel = -1; PV.cur = null; PV.undo = []; }
+    sh.photo = data; sh.bg = null; pvLoad(sh);
+    pvShotsUI();
+    pvLoadBg(sh, function (im) {
+      if (!im) { note('Non riesco a leggere questa foto.', true); return; }
+      pvChanged(); pvShotsUI(); pvSelUI(); pvMeasUI(); pvTool('move');
+      note('Foto ' + (PV.shots.indexOf(sh) + 1) + ' caricata.');
+    });
   }
   function pvImg(src, cb) { var im = new Image(); im.onload = function () { cb(im); }; im.onerror = function () { cb(null); }; im.src = src; }
   function pvDown(im, max, type, q) {
@@ -1045,14 +1108,21 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
   }
   function pvLoadState() {
     var raw = null; try { raw = localStorage.getItem(PVKEY); } catch (e) {}
-    if (!raw) return;
-    try {
-      var o = JSON.parse(raw);
-      PV.cliente = o.cliente || ''; PV.items = o.items || []; PV.paths = o.paths || []; PV.meas = o.meas || null; PV.scale = o.scale || null;
-      PV.mats = o.mats || {}; PV.note = o.note || ''; PV.extras = o.extras || []; PV.imgs = o.imgs || {}; PV.photo = o.photo || null;
-      Object.keys(PV.imgs).forEach(function (k) { pvImg(PV.imgs[k], function (im) { if (im) { PV.imEls[k] = im; pvDraw(); } }); });
-      if (PV.photo) pvImg(PV.photo, function (im) { if (im) { PV.bg = im; PV.W = im.width; PV.H = im.height; pvFit(); pvDraw(); } });
-    } catch (e) {}
+    PV.shots = []; PV.ai = 0;
+    if (raw) {
+      try {
+        var o = JSON.parse(raw);
+        PV.cliente = o.cliente || ''; PV.mats = o.mats || {}; PV.note = o.note || ''; PV.extras = o.extras || []; PV.imgs = o.imgs || {};
+        if (o.thick) Object.keys(PV.thick).forEach(function (k) { if (+o.thick[k] > 0) PV.thick[k] = +o.thick[k]; });
+        var src = Array.isArray(o.shots) && o.shots.length ? o.shots : [{ photo: o.photo || null, items: o.items, paths: o.paths, meas: o.meas, scale: o.scale }];
+        PV.shots = src.map(function (x) { var s = pvNewShot(); s.photo = x.photo || null; s.items = x.items || []; s.paths = x.paths || []; s.meas = x.meas || null; s.scale = x.scale || null; return s; });
+        PV.ai = Math.min(Math.max(+o.ai || 0, 0), PV.shots.length - 1);
+        Object.keys(PV.imgs).forEach(function (k2) { pvImg(PV.imgs[k2], function (im) { if (im) { PV.imEls[k2] = im; pvDraw(); } }); });
+      } catch (e) { PV.shots = []; }
+    }
+    if (!PV.shots.length) PV.shots = [pvNewShot()];
+    pvLoad(PV.shots[PV.ai]);
+    PV.shots.forEach(function (sh) { pvLoadBg(sh); });
   }
   function pvFit() { var cv = $('#pv-cv'); if (!cv) return; if (cv.width !== PV.W) cv.width = PV.W; if (cv.height !== PV.H) cv.height = PV.H; }
   function pvRR(c, x, y, w, h, r) {
@@ -1088,17 +1158,44 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
     if (sel) { c.setLineDash([8, 6]); c.strokeStyle = '#d9820f'; c.lineWidth = 3 / it.s * (PV.W / 1000 + .5); c.strokeRect(-e[0] - 8, -e[1] - 8, e[0] * 2 + 16, e[1] * 2 + 16); }
     c.restore();
   }
+  function pvStroke(c, pts, t, u, k) {
+    if (pts.length < 2) return;
+    var tr = function () { c.beginPath(); pts.forEach(function (q, i) { if (i) c.lineTo(q.x, q.y); else c.moveTo(q.x, q.y); }); };
+    c.save(); c.setLineDash([]);
+    if (t === 'tubi' || t === 'fumi') {
+      var w = (t === 'tubi' ? 22 : 26) * u * k;
+      c.lineJoin = t === 'tubi' ? 'miter' : 'round'; c.miterLimit = 3; c.lineCap = 'butt';
+      c.save(); c.translate(2 * u, 3 * u); tr(); c.strokeStyle = 'rgba(0,0,0,.28)'; c.lineWidth = w + 4 * u; c.stroke(); c.restore();
+      tr(); c.strokeStyle = '#7f8a96'; c.lineWidth = w + 4 * u; c.stroke();
+      if (t === 'tubi') {
+        tr(); c.strokeStyle = '#ffffff'; c.lineWidth = w; c.stroke();
+        tr(); c.strokeStyle = '#d3d9df'; c.lineWidth = Math.max(1.5 * u, w * 0.07); c.stroke();
+      } else {
+        tr(); c.strokeStyle = '#cfd6dd'; c.lineWidth = w; c.stroke();
+        tr(); c.strokeStyle = '#e8ecf0'; c.lineWidth = w * 0.66; c.stroke();
+        tr(); c.strokeStyle = '#ffffff'; c.lineWidth = w * 0.3; c.stroke();
+        c.strokeStyle = '#7f8a96'; c.lineWidth = Math.max(2 * u, w * 0.1);
+        for (var i = 1; i < pts.length; i++) {
+          var a = pts[i - 1], b = pts[i], L = Math.hypot(b.x - a.x, b.y - a.y); if (L < 1) continue;
+          var nx = -(b.y - a.y) / L, ny = (b.x - a.x) / L, step = 70 * u * k, h = w / 2 + 2 * u;
+          for (var s = step * 0.5; s < L; s += step) {
+            var px = a.x + (b.x - a.x) * s / L, py = a.y + (b.y - a.y) * s / L;
+            c.beginPath(); c.moveTo(px - nx * h, py - ny * h); c.lineTo(px + nx * h, py + ny * h); c.stroke();
+          }
+        }
+      }
+    } else {
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      var col = PCOL[t], dash = pvDash(t, u);
+      [['rgba(255,255,255,.9)', 11 * u * k, []], [col, 6 * u * k, dash]].forEach(function (L2) { tr(); c.strokeStyle = L2[0]; c.lineWidth = L2[1]; c.setLineDash(L2[2]); c.stroke(); });
+    }
+    c.restore();
+  }
   function pvPath(c, p, live) {
     if (!p.pts.length) return;
-    var u = PV.W / 1200, col = PCOL[p.t];
-    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-    var dash = pvDash(p.t, u);
-    [['rgba(255,255,255,.9)', 11 * u, []], [col, 6 * u, dash]].forEach(function (L) {
-      c.beginPath(); p.pts.forEach(function (q, i) { if (i) c.lineTo(q.x, q.y); else c.moveTo(q.x, q.y); });
-      c.strokeStyle = L[0]; c.lineWidth = L[1]; c.setLineDash(L[2]); c.stroke();
-    });
-    if (live) { c.setLineDash([]); p.pts.forEach(function (q) { c.beginPath(); c.arc(q.x, q.y, 8 * u, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 3 * u; c.strokeStyle = col; c.stroke(); }); }
-    c.restore();
+    var u = PV.W / 1200;
+    pvStroke(c, p.pts, p.t, u, PV.thick[p.t] || 1);
+    if (live) { c.save(); c.setLineDash([]); p.pts.forEach(function (q) { c.beginPath(); c.arc(q.x, q.y, 8 * u, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 3 * u; c.strokeStyle = PCOL[p.t]; c.stroke(); }); c.restore(); }
   }
   function pvPaint(c, ex) {
     var u = PV.W / 1200;
@@ -1118,13 +1215,12 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
       var used = {}; PV.paths.forEach(function (p) { used[p.t] = 1; });
       var ks = Object.keys(PCOL).filter(function (k) { return used[k]; });
       if (ks.length) {
-        var fs = Math.round(22 * u), lh = Math.round(34 * u), bw = Math.round(250 * u), bh = ks.length * lh + Math.round(16 * u), bx = Math.round(14 * u), by = PV.H - bh - Math.round(14 * u);
+        var fs = Math.round(22 * u), lh = Math.round(36 * u), bw = Math.round(270 * u), bh = ks.length * lh + Math.round(16 * u), bx = Math.round(14 * u), by = PV.H - bh - Math.round(14 * u);
         c.fillStyle = 'rgba(255,255,255,.92)'; pvRR(c, bx, by, bw, bh, 10 * u); c.fill();
         ks.forEach(function (k, i) {
           var yy = by + Math.round(8 * u) + i * lh + lh / 2;
-          c.beginPath(); c.moveTo(bx + 14 * u, yy); c.lineTo(bx + 62 * u, yy); c.lineWidth = 6 * u; c.lineCap = 'round'; c.strokeStyle = PCOL[k];
-          c.setLineDash(pvDash(k, u * .85)); c.stroke(); c.setLineDash([]);
-          c.fillStyle = '#14191e'; c.font = '600 ' + fs + 'px sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(PNAME[k], bx + 74 * u, yy);
+          pvStroke(c, [{ x: bx + 14 * u, y: yy }, { x: bx + 62 * u, y: yy }], k, u * 0.55, 1);
+          c.fillStyle = '#14191e'; c.font = '600 ' + fs + 'px sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(PNAME[k], bx + 76 * u, yy);
         });
       }
     }
@@ -1146,19 +1242,28 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
     PV.items.push(it); PV.sel = PV.items.length - 1; pvTool('move'); pvChanged(); pvSelUI();
   }
   function pvLen(p) { var l = 0; for (var i = 1; i < p.pts.length; i++) l += Math.hypot(p.pts[i].x - p.pts[i - 1].x, p.pts[i].y - p.pts[i - 1].y); return l; }
+  function pvAgg() {
+    pvStash();
+    var cnt = { split: 0, motore: 0, caldaia: 0 }, len = { tubi: 0, corr: 0, scar: 0, fumi: 0 }, has = {}, known = {}, miss = [];
+    PV.shots.forEach(function (sh, n) {
+      sh.items.forEach(function (i) { if (cnt[i.kind] != null) cnt[i.kind]++; });
+      var lack = false;
+      sh.paths.forEach(function (p) { has[p.t] = true; if (sh.scale) { known[p.t] = true; len[p.t] += pvLen(p) * sh.scale; } else lack = true; });
+      if (lack) miss.push(n + 1);
+    });
+    return { cnt: cnt, len: len, has: has, known: known, miss: miss };
+  }
   function pvRows() {
-    var cnt = { split: 0, motore: 0, caldaia: 0 }, len = { tubi: 0, corr: 0, scar: 0, fumi: 0 };
-    PV.items.forEach(function (i) { if (cnt[i.kind] != null) cnt[i.kind]++; });
-    PV.paths.forEach(function (p) { len[p.t] += pvLen(p); });
-    var m = function (px) { return PV.scale ? Math.ceil(px * PV.scale * 2) / 2 : null; };
+    var g = pvAgg(), cnt = g.cnt;
+    var m = function (t) { return g.known[t] ? Math.ceil(g.len[t] * 2) / 2 : null; };
     var defs = [
       ['split', 'Split interno', 'pz', cnt.split, cnt.split > 0],
       ['motore', 'Unità esterna (motore)', 'pz', cnt.motore, cnt.motore > 0],
       ['caldaia', 'Caldaia', 'pz', cnt.caldaia, cnt.caldaia > 0],
-      ['rame', 'Tubo rame in coppia con isolante', 'm', m(len.tubi), len.tubi > 0],
-      ['cavo', 'Cavo di alimentazione', 'm', m(len.corr), len.corr > 0],
-      ['scarico', 'Tubo scarico condensa', 'm', m(len.scar), len.scar > 0],
-      ['fumi', 'Tubo fumi caldaia', 'm', m(len.fumi), len.fumi > 0 || cnt.caldaia > 0],
+      ['rame', 'Tubo rame in coppia con isolante', 'm', m('tubi'), !!g.has.tubi],
+      ['cavo', 'Cavo di alimentazione', 'm', m('corr'), !!g.has.corr],
+      ['scarico', 'Tubo scarico condensa', 'm', m('scar'), !!g.has.scar],
+      ['fumi', 'Tubo fumi caldaia', 'm', m('fumi'), !!g.has.fumi || cnt.caldaia > 0],
       ['staffe', 'Staffe unità esterna', 'pz', cnt.motore, cnt.motore > 0]
     ];
     return defs.filter(function (d) { return d[4] || PV.mats[d[0]] !== undefined || PV.mats['n_' + d[0]]; }).map(function (d) {
@@ -1168,8 +1273,10 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
   }
   function pvMats() {
     var box = $('#pv-mats'); if (!box) return;
-    var rows = pvRows(), h = '';
-    if (PV.paths.length > 0 && !PV.scale) h += '<p class="pv-warn">Metri non calcolati: usa «Misura» per indicare una distanza reale sul muro (per esempio una porta alta 2 m).</p>';
+    var rows = pvRows(), g = pvAgg(), h = '';
+    if (g.miss.length) h += '<p class="pv-warn">' + (PV.shots.length > 1
+      ? 'Manca la misura in ' + g.miss.map(function (n) { return 'Foto ' + n; }).join(', ') + ': i metri di quei percorsi non sono contati. Usa «Misura» su ogni foto.'
+      : 'Metri non calcolati: usa «Misura» per indicare una distanza reale sul muro (per esempio una porta alta 2 m).') + '</p>';
     rows.forEach(function (r) {
       h += '<div class="pvm"><span class="n">' + esc(r.name) + ' <i>(' + r.unit + ')</i></span>' +
         '<input type="text" inputmode="decimal" autocomplete="off" data-mk="' + r.k + '" value="' + esc(r.ov !== undefined ? r.ov : (r.auto == null ? '' : pvFmt(r.auto))) + '" aria-label="Quantità ' + esc(r.name) + '">' +
@@ -1188,12 +1295,12 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
   function pvHint() {
     var h = $('#pv-hint'), pb = $('#pv-pathbar'); if (!h) return;
     var t = PV.tool, msg;
-    if (!PV.photo) msg = 'Per cominciare premi «Foto del muro». Poi aggiungi split, motore o caldaia e traccia i percorsi.';
-    else if (t === 'move') msg = PV.sel >= 0 ? 'Trascina per spostare. Con il cursore sotto cambi la dimensione.' : 'Tocca un disegno per selezionarlo e trascinarlo.';
+    if (!PV.photo) msg = 'Per cominciare premi «Scatta foto» o «Galleria». Poi aggiungi split, motore o caldaia e traccia i percorsi.';
+    else if (t === 'move') msg = PV.sel >= 0 ? 'Trascina per spostare. Per ingrandire o rimpicciolire usa − e + oppure due dita.' : 'Tocca un disegno per selezionarlo e trascinarlo.';
     else if (t === 'meas') msg = 'Tocca due punti di cui conosci la distanza reale, poi scrivila qui sotto.';
-    else msg = 'Tocca sul muro i punti del percorso (' + PNAME[t].toLowerCase() + '), poi premi «Fine tracciato».' + (PV.cur ? ' Punti: ' + PV.cur.pts.length : '');
+    else msg = 'Tocca sul muro i punti del percorso (' + PSHORT[t] + '), poi premi «Fine tracciato».' + (PV.cur ? ' Punti: ' + PV.cur.pts.length : '');
     h.textContent = msg;
-    if (pb) pb.hidden = !(t === 'tubi' || t === 'corr' || t === 'scar' || t === 'fumi');
+    if (pb) { pb.hidden = !(t === 'tubi' || t === 'corr' || t === 'scar' || t === 'fumi'); if (!pb.hidden) { var th = $('#pv-thick'); if (th) th.value = String(PV.thick[t] || 1); } }
   }
   function pvTool(t) {
     if (PV.cur && t !== PV.tool) pvFinish();
@@ -1205,11 +1312,16 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
     if (PV.cur && PV.cur.pts.length >= 2) { pvSnap(); PV.paths.push(PV.cur); PV.cur = null; pvChanged(); }
     else { PV.cur = null; pvDraw(); pvHint(); }
   }
+  function pvSyncSize() {
+    var it = PV.items[PV.sel]; if (!it) return;
+    var v = it.s / (PV.W / 1000), sl = $('#pv-size'), lb = $('#pv-sizev');
+    if (sl) sl.value = String(Math.round(v * 100) / 100);
+    if (lb) lb.textContent = Math.round(v * 100) + '%';
+  }
   function pvSelUI() {
-    var b = $('#pv-selbox'), sl = $('#pv-size'); if (!b) return;
+    var b = $('#pv-selbox'); if (!b) return;
     var it = PV.items[PV.sel]; b.hidden = !it;
-    if (it && sl) sl.value = String(it.s / (PV.W / 1000));
-    pvHint();
+    pvSyncSize(); pvHint();
   }
   function pvMeasUI() {
     var b = $('#pv-measbox'), t = $('#pv-measinfo'); if (!b) return;
@@ -1231,42 +1343,63 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
     });
     return out;
   }
+  function pvShotCanvas(sh) {
+    var keep = PV.shots[PV.ai]; pvStash(); pvLoad(sh);
+    var cv = document.createElement('canvas'); cv.width = PV.W; cv.height = PV.H;
+    try { pvPaint(cv.getContext('2d'), true); } finally { pvLoad(keep); }
+    return cv;
+  }
   async function pvRender(full) {
-    var u = PV.W / 1200, headH = Math.round(76 * u), rows = full ? pvRowsForExport() : [], rowH = Math.round(46 * u), pad = Math.round(26 * u);
+    pvStash();
+    var list = full ? PV.shots.filter(function (s) { return s.photo; }) : [PV.shots[PV.ai]];
+    if (!list.length) list = [PV.shots[PV.ai]];
+    var cvs = list.map(pvShotCanvas), outW = cvs[0].width, u = outW / 1200;
+    var headH = Math.round(76 * u), rows = full ? pvRowsForExport() : [], rowH = Math.round(46 * u), pad = Math.round(26 * u), gap = Math.round(10 * u);
+    var hs = cvs.map(function (sc) { return Math.round(sc.height * outW / sc.width); });
+    var imgH = hs.reduce(function (a, b) { return a + b; }, 0) + gap * (cvs.length - 1);
     var fs = Math.round(24 * u), lineH = Math.round(32 * u), noteLines = [];
     var tmp = document.createElement('canvas').getContext('2d'); tmp.font = '500 ' + fs + 'px sans-serif';
     if (full && PV.note) {
       String(PV.note).split(/\n/).forEach(function (para) {
         var words = para.split(/\s+/), line = '';
-        words.forEach(function (w) { var t = line ? line + ' ' + w : w; if (tmp.measureText(t).width > PV.W - pad * 2 && line) { noteLines.push(line); line = w; } else line = t; });
+        words.forEach(function (w) { var t = line ? line + ' ' + w : w; if (tmp.measureText(t).width > outW - pad * 2 && line) { noteLines.push(line); line = w; } else line = t; });
         noteLines.push(line);
       });
     }
     var showT = full && rows.length, showN = full && noteLines.length;
     var tableH = (showT ? pad + Math.round(54 * u) + rows.length * rowH : 0) + (showN ? pad + Math.round(44 * u) + noteLines.length * lineH : 0) + ((showT || showN) ? pad : 0);
-    var out = document.createElement('canvas'); out.width = PV.W; out.height = headH + PV.H + tableH;
+    var out = document.createElement('canvas'); out.width = outW; out.height = headH + imgH + tableH;
     var c = out.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, out.width, out.height);
     c.fillStyle = '#14191e'; c.textBaseline = 'middle'; c.textAlign = 'left'; c.font = '700 ' + Math.round(30 * u) + 'px sans-serif';
-    c.fillText(PV.cliente ? 'Preventivo · ' + PV.cliente : 'Preventivo', pad, headH / 2, PV.W - pad * 2 - 200 * u);
-    c.textAlign = 'right'; c.font = '500 ' + fs + 'px sans-serif'; c.fillStyle = '#5d6874'; c.fillText(pvDate(), PV.W - pad, headH / 2);
-    c.save(); c.translate(0, headH); pvPaint(c, true); c.restore();
-    var y = headH + PV.H;
+    c.fillText(PV.cliente ? 'Preventivo · ' + PV.cliente : 'Preventivo', pad, headH / 2, outW - pad * 2 - 200 * u);
+    c.textAlign = 'right'; c.font = '500 ' + fs + 'px sans-serif'; c.fillStyle = '#5d6874'; c.fillText(pvDate(), outW - pad, headH / 2);
+    var y = headH;
+    cvs.forEach(function (sc, i) {
+      c.drawImage(sc, 0, y, outW, hs[i]);
+      if (cvs.length > 1) {
+        var lab = 'Foto ' + (PV.shots.indexOf(list[i]) + 1), lw = Math.round(120 * u), lhh = Math.round(40 * u);
+        c.fillStyle = 'rgba(20,25,30,.72)'; pvRR(c, Math.round(12 * u), y + Math.round(12 * u), lw, lhh, 10 * u); c.fill();
+        c.fillStyle = '#fff'; c.font = '700 ' + Math.round(22 * u) + 'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(lab, Math.round(12 * u) + lw / 2, y + Math.round(12 * u) + lhh / 2);
+      }
+      y += hs[i] + gap;
+    });
+    y = headH + imgH;
     if (showT) {
       y += pad;
-      c.fillStyle = '#14191e'; c.textAlign = 'left'; c.font = '700 ' + Math.round(28 * u) + 'px sans-serif'; c.fillText('Elenco materiali', pad, y + 20 * u);
+      c.fillStyle = '#14191e'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = '700 ' + Math.round(28 * u) + 'px sans-serif'; c.fillText('Elenco materiali', pad, y + 20 * u);
       y += Math.round(54 * u);
       rows.forEach(function (r, i) {
-        if (i % 2 === 0) { c.fillStyle = '#f4f6f8'; c.fillRect(0, y, PV.W, rowH); }
+        if (i % 2 === 0) { c.fillStyle = '#f4f6f8'; c.fillRect(0, y, outW, rowH); }
         c.fillStyle = '#14191e'; c.textAlign = 'left'; c.font = '500 ' + fs + 'px sans-serif';
-        c.fillText(r[0], pad, y + rowH / 2, PV.W * 0.44);
-        c.font = '700 ' + fs + 'px sans-serif'; c.fillText(r[1], PV.W * 0.50, y + rowH / 2, PV.W * 0.14);
-        c.font = '500 ' + fs + 'px sans-serif'; c.fillStyle = '#3a4550'; c.fillText(r[2], PV.W * 0.65, y + rowH / 2, PV.W * 0.33);
+        c.fillText(r[0], pad, y + rowH / 2, outW * 0.44);
+        c.font = '700 ' + fs + 'px sans-serif'; c.fillText(r[1], outW * 0.50, y + rowH / 2, outW * 0.14);
+        c.font = '500 ' + fs + 'px sans-serif'; c.fillStyle = '#3a4550'; c.fillText(r[2], outW * 0.65, y + rowH / 2, outW * 0.33);
         y += rowH;
       });
     }
     if (showN) {
       y += pad;
-      c.fillStyle = '#14191e'; c.textAlign = 'left'; c.font = '700 ' + Math.round(28 * u) + 'px sans-serif'; c.fillText('Note', pad, y + 14 * u);
+      c.fillStyle = '#14191e'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = '700 ' + Math.round(28 * u) + 'px sans-serif'; c.fillText('Note', pad, y + 14 * u);
       y += Math.round(44 * u);
       c.font = '500 ' + fs + 'px sans-serif';
       noteLines.forEach(function (ln) { c.fillText(ln, pad, y + lineH / 2); y += lineH; });
@@ -1295,31 +1428,38 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
   function pvBuild() {
     if ($('#prev')) return;
     var d = document.createElement('div'); d.id = 'prev'; d.className = 'prev'; d.hidden = true;
+    var sw = function (t) { return '<i class="sw" style="background:' + (t === 'tubi' || t === 'fumi' ? '#fff;border:1px solid #7f8a96' : PCOL[t]) + '"></i>'; };
     d.innerHTML =
       '<div class="pv-top"><button type="button" class="back" data-pv="close">← Chiudi</button><h2>Preventivo</h2><button type="button" class="btn" data-pv="new" id="pv-new">Nuovo</button></div>' +
       '<div class="pv-body wrap">' +
       '<div class="fld"><label for="pv-cli">Cliente / indirizzo</label><input id="pv-cli" type="text" autocomplete="off"></div>' +
       '<div class="pv-row3"><div class="btn primary pv-pick">Scatta foto<input type="file" id="pv-cam" accept="image/*" capture="environment" aria-label="Scatta foto"></div><div class="btn primary pv-pick">Galleria<input type="file" id="pv-photo" accept="image/*" aria-label="Scegli dalla galleria"></div><div class="btn pv-pick">Un tuo disegno<input type="file" id="pv-img" accept="image/*" aria-label="Carica un tuo disegno"></div></div>' +
+      '<button type="button" class="btn" data-pv="cam">Fotocamera in diretta</button>' +
+      '<div id="pv-shots" class="pv-shots"></div>' +
       '<canvas id="pv-cv" width="1200" height="800"></canvas>' +
       '<div id="pv-hint" class="pv-hint" aria-live="polite"></div>' +
       '<div id="pv-tools" class="pv-tools">' +
       '<button type="button" data-pv="tool" data-t="move">Sposta</button>' +
       '<button type="button" data-pv="add" data-k="split">+ Split</button><button type="button" data-pv="add" data-k="motore">+ Motore</button>' +
       '<button type="button" data-pv="add" data-k="caldaia">+ Caldaia</button>' +
-      '<button type="button" data-pv="tool" data-t="tubi"><i class="sw" style="background:' + PCOL.tubi + '"></i>Tubi</button>' +
-      '<button type="button" data-pv="tool" data-t="corr"><i class="sw" style="background:' + PCOL.corr + '"></i>Corrente</button>' +
-      '<button type="button" data-pv="tool" data-t="scar"><i class="sw" style="background:' + PCOL.scar + '"></i>Scarico</button>' +
-      '<button type="button" data-pv="tool" data-t="fumi"><i class="sw" style="background:' + PCOL.fumi + '"></i>Fumi</button>' +
+      '<button type="button" data-pv="tool" data-t="tubi">' + sw('tubi') + 'Canalina</button>' +
+      '<button type="button" data-pv="tool" data-t="corr">' + sw('corr') + 'Corrente</button>' +
+      '<button type="button" data-pv="tool" data-t="scar">' + sw('scar') + 'Scarico</button>' +
+      '<button type="button" data-pv="tool" data-t="fumi">' + sw('fumi') + 'Fumi</button>' +
       '<button type="button" data-pv="tool" data-t="meas">Misura</button>' +
       '<button type="button" data-pv="undo">Annulla</button><button type="button" data-pv="del">Elimina</button></div>' +
-      '<div id="pv-pathbar" class="pv-row" hidden><button type="button" class="btn primary" data-pv="finish">Fine tracciato</button><button type="button" class="btn" data-pv="undo">Togli ultimo punto</button></div>' +
-      '<div id="pv-selbox" class="pv-sel" hidden><label for="pv-size">Dimensione</label><input type="range" id="pv-size" min="0.3" max="3" step="0.05" value="1"></div>' +
+      '<div id="pv-selbox" class="pv-sel" hidden><label for="pv-size">Dimensione dell’oggetto selezionato</label><div class="pv-size"><button type="button" data-pv="sizem" aria-label="Più piccolo">−</button><input type="range" id="pv-size" min="0.2" max="6" step="0.05" value="1"><button type="button" data-pv="sizep" aria-label="Più grande">+</button><output id="pv-sizev">100%</output></div></div>' +
+      '<div id="pv-pathbar" class="pv-sel" hidden><div class="pv-row"><button type="button" class="btn primary" data-pv="finish">Fine tracciato</button><button type="button" class="btn" data-pv="undo">Togli ultimo punto</button></div><label for="pv-thick">Spessore</label><input type="range" id="pv-thick" min="0.5" max="3" step="0.1" value="1"></div>' +
       '<div id="pv-measbox" class="pv-sel" hidden><div id="pv-measinfo" class="foot" style="text-align:left"></div>' +
       '<div class="amt"><label for="pv-meas">Distanza reale (m)</label><input id="pv-meas" type="text" inputmode="decimal" autocomplete="off"><button type="button" class="btn" id="pv-measgo" data-pv="measset" disabled>Imposta</button></div></div>' +
       '<h3 class="pv-h">Elenco materiali</h3><div id="pv-mats"></div><button type="button" class="btn" data-pv="addrow">+ Aggiungi voce</button>' +
       '<div class="fld"><label for="pv-note">Note</label><textarea id="pv-note" rows="3" placeholder="Note per il preventivo"></textarea></div>' +
-      '<div class="pv-row"><button type="button" class="btn primary" data-pv="savepic">Salva immagine</button><button type="button" class="btn primary" data-pv="savefull">Salva con elenco</button></div>' +
+      '<div class="pv-row"><button type="button" class="btn primary" data-pv="savepic">Salva questa foto</button><button type="button" class="btn primary" data-pv="savefull">Salva tutto con elenco</button></div>' +
       '<button type="button" class="btn" data-pv="share" id="pv-share">Condividi</button>' +
+      '</div>' +
+      '<div id="pv-cam-wrap" class="pv-camwrap" hidden>' +
+        '<div id="pv-cam-live" hidden><video id="pv-video" playsinline muted autoplay></video><div class="pv-camact"><button type="button" class="btn" data-pv="camclose">Chiudi</button><button type="button" class="btn primary" data-pv="camshot">Scatta</button></div></div>' +
+        '<div id="pv-cam-err" class="pv-camerr"><p id="pv-cam-msg"></p><div class="btn primary pv-pick">Apri la fotocamera del telefono<input type="file" id="pv-cam2" accept="image/*" capture="environment" aria-label="Apri la fotocamera del telefono"></div><button type="button" class="btn" data-pv="camclose">Chiudi</button></div>' +
       '</div>';
     document.body.appendChild(d);
     var cv = $('#pv-cv', d);
@@ -1327,17 +1467,33 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
       var b = e.target.closest('[data-pv]'); if (!b) return;
       var a = b.dataset.pv;
       if (a !== 'new' && PV.confNew) { PV.confNew = false; $('#pv-new').textContent = 'Nuovo'; }
+      if (a !== 'delshot' && PV.confShot) { PV.confShot = false; pvShotsUI(); }
       if (a === 'close') pvClose();
       else if (a === 'tool') pvTool(b.dataset.t);
       else if (a === 'add') pvAdd(b.dataset.k);
+      else if (a === 'cam') pvCamOpen();
+      else if (a === 'camclose') pvCamClose();
+      else if (a === 'camshot') pvCamShot();
       else if (a === 'undo') pvUndo();
       else if (a === 'del') { if (PV.sel >= 0) { pvSnap(); PV.items.splice(PV.sel, 1); PV.sel = -1; pvChanged(); pvSelUI(); } else note('Seleziona prima un disegno con «Sposta».', true); }
       else if (a === 'finish') pvFinish();
+      else if (a === 'sizem' || a === 'sizep') {
+        var it0 = PV.items[PV.sel];
+        if (it0) { pvSnap(); var base = PV.W / 1000; it0.s = Math.min(6 * base, Math.max(0.2 * base, it0.s * (a === 'sizep' ? 1.1 : 1 / 1.1))); pvDraw(); pvSyncSize(); pvSave(); }
+      }
+      else if (a === 'shot') pvActivate(+b.dataset.i);
+      else if (a === 'delshot') {
+        if (!PV.confShot) { PV.confShot = true; pvShotsUI(); return; }
+        PV.confShot = false; pvFinish();
+        if (PV.shots.length > 1) { PV.shots.splice(PV.ai, 1); PV.ai = Math.min(PV.ai, PV.shots.length - 1); } else PV.shots[0] = pvNewShot();
+        pvLoad(PV.shots[PV.ai]); PV.sel = -1; PV.cur = null; PV.undo = []; PV.drag = null; PV.pinch = null;
+        pvFit(); pvChanged(); pvShotsUI(); pvSelUI(); pvMeasUI();
+      }
       else if (a === 'measset') {
         var m = num($('#pv-meas').value), d2 = PV.meas && PV.meas.b ? Math.hypot(PV.meas.b.x - PV.meas.a.x, PV.meas.b.y - PV.meas.a.y) : 0;
         if (m && m > 0 && d2 > 0) { pvSnap(); PV.scale = m / d2; $('#pv-meas').value = ''; pvChanged(); pvMeasUI(); note('Misura impostata.'); } else note('Scrivi la distanza reale in metri.', true);
       }
-      else if (a === 'addrow') { PV.extras.push({ name: '', qty: '', price: '' }); pvMats(); pvSave(); }
+      else if (a === 'addrow') { PV.extras.push({ name: '', qty: '', note: '' }); pvMats(); pvSave(); }
       else if (a === 'delrow') { PV.extras.splice(+b.dataset.i, 1); pvMats(); pvSave(); }
       else if (a === 'savepic') pvSavePic(false);
       else if (a === 'savefull') pvSavePic(true);
@@ -1345,14 +1501,16 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
       else if (a === 'new') {
         if (!PV.confNew) { PV.confNew = true; b.textContent = 'Conferma: nuovo'; return; }
         PV.confNew = false; b.textContent = 'Nuovo';
-        PV.items = []; PV.paths = []; PV.cur = null; PV.meas = null; PV.scale = null; PV.cliente = ''; PV.photo = null; PV.bg = null; PV.mats = {}; PV.note = ''; PV.extras = []; PV.imgs = {}; PV.imEls = {}; PV.undo = []; PV.sel = -1; PV.W = 1200; PV.H = 800;
-        $('#pv-cli').value = ''; $('#pv-note').value = ''; pvTool('move'); pvChanged(); pvSelUI();
+        PV.shots = [pvNewShot()]; PV.ai = 0; pvLoad(PV.shots[0]);
+        PV.cur = null; PV.cliente = ''; PV.mats = {}; PV.note = ''; PV.extras = []; PV.imgs = {}; PV.imEls = {}; PV.undo = []; PV.sel = -1; PV.thick = { tubi: 1, corr: 1, scar: 1, fumi: 1 };
+        $('#pv-cli').value = ''; $('#pv-note').value = ''; pvTool('move'); pvFit(); pvChanged(); pvSelUI(); pvShotsUI();
       }
     });
     d.addEventListener('input', function (e) {
       var t = e.target;
       if (t.id === 'pv-cli') { PV.cliente = t.value; pvSave(); }
-      else if (t.id === 'pv-size') { var it = PV.items[PV.sel]; if (it) { it.s = (+t.value) * (PV.W / 1000); pvDraw(); } }
+      else if (t.id === 'pv-size') { var it = PV.items[PV.sel]; if (it) { it.s = (+t.value) * (PV.W / 1000); pvDraw(); var lb = $('#pv-sizev'); if (lb) lb.textContent = Math.round((+t.value) * 100) + '%'; } }
+      else if (t.id === 'pv-thick') { if (PV.thick[PV.tool] != null) { PV.thick[PV.tool] = +t.value; pvDraw(); } }
       else if (t.dataset.mk) { if (t.value === '') delete PV.mats[t.dataset.mk]; else PV.mats[t.dataset.mk] = t.value; pvSave(); }
       else if (t.dataset.mn) { PV.mats['n_' + t.dataset.mn] = t.value; pvSave(); }
       else if (t.id === 'pv-note') { PV.note = t.value; pvSave(); }
@@ -1360,13 +1518,12 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
     });
     d.addEventListener('change', function (e) {
       var t = e.target;
-      if (t.id === 'pv-size') { pvSave(); }
-      else if ((t.id === 'pv-photo' || t.id === 'pv-cam') && t.files && t.files[0]) {
-        note('Carico la foto…');
+      if (t.id === 'pv-size' || t.id === 'pv-thick') { pvSave(); }
+      else if ((t.id === 'pv-photo' || t.id === 'pv-cam' || t.id === 'pv-cam2') && t.files && t.files[0]) {
+        pvCamClose(); note('Carico la foto…');
         pvReadFile(t.files[0], function (im) {
           t.value = ''; if (!im) { note('Non riesco a leggere questa foto.', true); return; }
-          PV.photo = pvDown(im, 1600, 'image/jpeg', 0.82);
-          pvImg(PV.photo, function (im2) { if (!im2) return; PV.bg = im2; PV.W = im2.width; PV.H = im2.height; pvSnap(); pvChanged(); note('Foto caricata.'); });
+          pvSetPhoto(pvDown(im, 1400, 'image/jpeg', 0.8));
         });
       }
       else if (t.id === 'pv-img' && t.files && t.files[0]) {
@@ -1383,9 +1540,18 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
     });
     var sh = $('#pv-share', d); if (sh && !(navigator.canShare && navigator.share)) sh.hidden = true;
     cv.addEventListener('pointerdown', function (e) {
-      e.preventDefault(); var p = pvPt(e), t = PV.tool;
+      e.preventDefault();
+      if (e.pointerType === 'mouse') PV.ptrs = {};
+      PV.ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(PV.ptrs);
+      if (ids.length >= 2) {
+        var si = PV.sel >= 0 ? PV.sel : (PV.prevSel != null ? PV.prevSel : -1), it2 = PV.items[si];
+        if (PV.tool === 'move' && it2) { PV.sel = si; var a1 = PV.ptrs[ids[0]], b1 = PV.ptrs[ids[1]]; pvSnap(); PV.pinch = { d0: Math.hypot(a1.x - b1.x, a1.y - b1.y) || 1, s0: it2.s, a: ids[0], b: ids[1] }; PV.drag = null; pvSelUI(); pvDraw(); }
+        return;
+      }
+      var p = pvPt(e), t = PV.tool;
       if (t === 'move') {
-        var i = pvHit(p); PV.sel = i;
+        var i = pvHit(p); PV.prevSel = PV.sel; PV.sel = i;
         if (i >= 0) { pvSnap(); var it = PV.items[i]; PV.drag = { dx: p.x - it.x, dy: p.y - it.y }; try { cv.setPointerCapture(e.pointerId); } catch (x) {} }
         pvSelUI(); pvDraw();
       } else if (t === 'meas') {
@@ -1397,21 +1563,65 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
       }
     });
     cv.addEventListener('pointermove', function (e) {
+      if (PV.ptrs[e.pointerId]) PV.ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (PV.pinch) {
+        var pa = PV.ptrs[PV.pinch.a], pb = PV.ptrs[PV.pinch.b], it3 = PV.items[PV.sel];
+        if (pa && pb && it3) { var base = PV.W / 1000; it3.s = Math.min(6 * base, Math.max(0.2 * base, PV.pinch.s0 * (Math.hypot(pa.x - pb.x, pa.y - pb.y) / PV.pinch.d0))); pvDraw(); pvSyncSize(); }
+        return;
+      }
       if (!PV.drag) return; var p = pvPt(e), it = PV.items[PV.sel]; if (!it) return;
       it.x = p.x - PV.drag.dx; it.y = p.y - PV.drag.dy; pvDraw();
     });
-    var up = function () { if (PV.drag) { PV.drag = null; pvSave(); } };
+    var up = function (e) {
+      delete PV.ptrs[e.pointerId];
+      var n = Object.keys(PV.ptrs).length;
+      if (PV.pinch && n < 2) { PV.pinch = null; pvSave(); }
+      if (PV.drag && n === 0) { PV.drag = null; pvSave(); }
+    };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  }
+  var camStream = null, camTok = 0;
+  function pvCamStop() { if (camStream) { camStream.getTracks().forEach(function (t) { t.stop(); }); camStream = null; } var v = $('#pv-video'); if (v) v.srcObject = null; }
+  function pvCamClose() { camTok++; pvCamStop(); var w = $('#pv-cam-wrap'); if (w) w.hidden = true; }
+  function pvCamMsg(txt) { var m = $('#pv-cam-msg'), live = $('#pv-cam-live'), err = $('#pv-cam-err'); if (!m) return; m.textContent = txt; live.hidden = true; err.hidden = false; }
+  function pvCamFail(name) {
+    pvCamStop();
+    pvCamMsg(name === 'NotAllowedError' || name === 'SecurityError'
+      ? 'L’app o il telefono non permettono di aprire la fotocamera in diretta da qui. Usa il pulsante qui sotto: il telefono ti fa scegliere «Fotocamera» o «Scatta foto».'
+      : 'La fotocamera in diretta non si apre da qui. Usa il pulsante qui sotto: il telefono ti fa scegliere «Fotocamera» o «Scatta foto».');
+  }
+  async function pvCamOpen() {
+    var w = $('#pv-cam-wrap'), v = $('#pv-video'), live = $('#pv-cam-live'), err = $('#pv-cam-err'); if (!w) return;
+    var tok = ++camTok;
+    w.hidden = false;
+    pvCamMsg('Apro la fotocamera… Se non succede nulla, usa il pulsante qui sotto.');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { pvCamFail('nodev'); return; }
+    try {
+      var st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+      if (tok !== camTok || w.hidden) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+      camStream = st; v.srcObject = st; live.hidden = false; err.hidden = true;
+      try { await v.play(); } catch (x) {}
+    } catch (x) { if (tok === camTok) pvCamFail(x && x.name); }
+  }
+  function pvCamShot() {
+    var v = $('#pv-video');
+    if (!v || !v.videoWidth) { note('La fotocamera non è ancora pronta.', true); return; }
+    var r = Math.min(1, 1400 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement('canvas');
+    c.width = Math.round(v.videoWidth * r); c.height = Math.round(v.videoHeight * r);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    var data = c.toDataURL('image/jpeg', 0.8);
+    pvCamClose(); pvSetPhoto(data);
   }
   function pvOpen() {
     pvBuild();
     if (!PV.ready) { PV.ready = true; pvLoadState(); }
     var d = $('#prev'); d.hidden = false; document.body.style.overflow = 'hidden';
     $('#pv-cli').value = PV.cliente || ''; $('#pv-note').value = PV.note || '';
-    pvTool(PV.tool === 'move' ? 'move' : PV.tool); pvFit(); pvDraw(); pvMats(); pvSelUI(); pvMeasUI(); pvHint();
+    pvTool(PV.tool); pvFit(); pvDraw(); pvMats(); pvSelUI(); pvMeasUI(); pvHint(); pvShotsUI();
     d.scrollTop = 0;
   }
-  function pvClose() { pvFinish(); var d = $('#prev'); if (d) d.hidden = true; document.body.style.overflow = ''; }
+  function pvClose() { pvCamClose(); pvFinish(); var d = $('#prev'); if (d) d.hidden = true; document.body.style.overflow = ''; }
 
 
   document.addEventListener('click', async function (e) {
@@ -1600,7 +1810,7 @@ label.btn { cursor: pointer; -webkit-tap-highlight-color: transparent; user-sele
       txt('Totale contanti: ' + money(t.cash), X, ty2 + 8, 11, true);
       txt('Totale POS/Bancomat: ' + money(t.pos), X, ty2 + 22, 11, true);
       txt('Totale bollini: ' + money(t.bol), X, ty2 + 36, 11, true);
-      txt('Totale incassato: ' + money(t.cash + t.pos + t.bol), X, ty2 + 50, 11, true);
+      txt('Totale (contanti + bollini): ' + money(t.cash + t.bol), X, ty2 + 50, 11, true);
       if (over.length) {
         doc.addPage(); var oy = 50; doc.setTextColor(0);
         txt('NOTE COMPLETE', 30, oy, 14, true); oy += 26;
